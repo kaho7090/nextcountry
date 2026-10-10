@@ -5,10 +5,17 @@ import sqlite3
 import pandas as pd
 import streamlit as st
 
-from nextcountry.config import COUNTRIES_CSV, DEFAULT_DB_PATH
+from nextcountry.config import (
+    COUNTRIES_CSV,
+    DEFAULT_DB_PATH,
+    GEOJSON_COUNTRIES_PATH,
+    TARGET_COUNTRIES_CSV,
+)
 from nextcountry.dataset import ensure_database
+from nextcountry.geomap import build_world_map_figure
 from nextcountry.ranking import rank_unvisited
 from nextcountry.repository import list_countries_with_preferences, set_priority, set_visited
+from nextcountry.targets import load_target_country_codes
 
 st.set_page_config(page_title="NextCountry", page_icon="🌍", layout="wide")
 
@@ -22,32 +29,42 @@ def get_connection(db_path: str) -> sqlite3.Connection:
     return conn
 
 
+@st.cache_data
+def get_target_codes() -> frozenset[str]:
+    return load_target_country_codes(TARGET_COUNTRIES_CSV)
+
+
+def _country_label(row: pd.Series) -> str:
+    return f"{row['name_ja']} ({row['name_en']}) [{row['code']}]"
+
+
 def main() -> None:
     st.title("NextCountry")
     st.caption("未訪問国を優先度付きでランキングし、旅の計画を支援します。")
 
+    target_codes = get_target_codes()
     conn = get_connection(str(DEFAULT_DB_PATH))
     records = list_countries_with_preferences(conn)
     df = pd.DataFrame(records)
+    df["code"] = df["code"].astype(str).str.upper()
 
-    visited_count = int((df["visited"] == 1).sum())
-    total = len(df)
-    st.metric("訪問済み / 全地域", f"{visited_count} / {total}")
+    df_target = df[df["code"].isin(target_codes)].copy()
+    visited_count = int((df_target["visited"] == 1).sum())
+    total_targets = len(target_codes)
+    st.metric("訪問済み / 対象国（197）", f"{visited_count} / {total_targets}")
 
-    options = df.apply(
-        lambda r: f"{r['name_ja']} ({r['name_en']}) [{r['code']}]", axis=1
-    ).tolist()
-    code_by_label = dict(zip(options, df["code"]))
+    options = df_target.apply(_country_label, axis=1).tolist()
+    code_by_label = dict(zip(options, df_target["code"]))
 
-    tab_rank, tab_visit, tab_priority = st.tabs(
-        ["未訪問国ランキング", "訪問状況", "優先度の設定"]
+    tab_rank, tab_map, tab_visit, tab_priority = st.tabs(
+        ["未訪問国ランキング", "世界地図", "訪問状況", "優先度の設定"]
     )
 
     with tab_rank:
-        st.subheader("未訪問国ランキング")
-        ranked = rank_unvisited(df)
+        st.subheader("未訪問国ランキング（197カ国対象）")
+        ranked = rank_unvisited(df, target_codes=target_codes)
         if ranked.empty:
-            st.info("未訪問の国がありません。")
+            st.info("未訪問の対象国がありません。")
         else:
             display = ranked.rename(
                 columns={
@@ -60,9 +77,22 @@ def main() -> None:
             )
             st.dataframe(display, use_container_width=True, hide_index=True)
 
+    with tab_map:
+        st.subheader("世界地図")
+        st.markdown(
+            "**凡例:** "
+            "<span style='color:#3D8B5F'>■</span> 訪問済み（対象国）　"
+            "<span style='color:#5C9BD5'>■</span> 未訪問（対象国）　"
+            "<span style='color:#BDBDBD'>■</span> 対象外",
+            unsafe_allow_html=True,
+        )
+        fig = build_world_map_figure(records, target_codes, GEOJSON_COUNTRIES_PATH)
+        st.plotly_chart(fig, use_container_width=True)
+        st.caption("地図は閲覧専用です。訪問状況の変更は「訪問状況」タブから行ってください。")
+
     with tab_visit:
-        st.subheader("訪問済みにする")
-        current_visited = df[df["visited"] == 1]["code"].tolist()
+        st.subheader("訪問済みにする（197カ国）")
+        current_visited = df_target[df_target["visited"] == 1]["code"].tolist()
         selected_labels = st.multiselect(
             "訪問済みの国",
             options=options,
@@ -72,7 +102,7 @@ def main() -> None:
         )
         if st.button("訪問状況を保存", type="primary"):
             selected_codes = {code_by_label[lbl] for lbl in selected_labels}
-            for row in df.itertuples(index=False):
+            for row in df_target.itertuples(index=False):
                 set_visited(conn, row.code, row.code in selected_codes)
             st.success("訪問状況を保存しました。")
             st.rerun()
@@ -86,7 +116,7 @@ def main() -> None:
             index=0,
         )
         code = code_by_label[label]
-        current = int(df.loc[df["code"] == code, "priority"].iloc[0])
+        current = int(df_target.loc[df_target["code"] == code, "priority"].iloc[0])
         priority = st.slider("優先度", min_value=0, max_value=5, value=current)
         if st.button("優先度を保存"):
             set_priority(conn, code, priority)
