@@ -4,6 +4,7 @@ from nextcountry.config import GEOJSON_COUNTRIES_PATH
 from nextcountry.geomap import (
     MapStatus,
     build_country_status_lookup,
+    build_world_map_figure,
     normalize_geo_properties_to_app_code,
     resolve_target_codes_on_geojson,
     status_for_country,
@@ -41,6 +42,15 @@ def test_build_country_status_lookup():
     assert lookup["JP"] == MapStatus.VISITED
     assert lookup["US"] == MapStatus.UNVISITED
     assert lookup["AQ"] == MapStatus.OUT_OF_TARGET
+
+
+def test_build_world_map_figure():
+    records = [
+        {"code": "JP", "name_ja": "日本", "name_en": "Japan", "visited": 1, "priority": 3},
+        {"code": "US", "name_ja": "米国", "name_en": "United States", "visited": 0, "priority": 2},
+    ]
+    fig = build_world_map_figure(records, DEFAULT_TARGET_COUNTRY_CODES, GEOJSON_COUNTRIES_PATH)
+    assert len(fig.data) == 1
 
 
 def test_missing_geojson_target_raises_clear_error(tmp_path):

@@ -149,7 +149,7 @@ def build_world_map_figure(
         hover_texts.append(hover)
 
     fig = go.Figure(
-        go.Choroplethgeo(
+        go.Choropleth(
             geojson=geojson,
             locations=locations,
             z=z_values,
@@ -174,6 +174,8 @@ def build_world_map_figure(
         showcoastlines=True,
         projection_type="natural earth",
         bgcolor="rgba(0,0,0,0)",
+        fitbounds="locations",
+        visible=True,
     )
     fig.update_layout(
         margin=dict(l=0, r=0, t=30, b=0),
