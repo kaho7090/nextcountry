@@ -15,6 +15,7 @@ from nextcountry.dataset import ensure_database
 from nextcountry.geomap import build_world_map_figure
 from nextcountry.ranking import rank_unvisited
 from nextcountry.repository import list_countries_with_preferences, set_priority, set_visited
+from nextcountry.flights.ui import render_flights_tab
 from nextcountry.targets import load_target_country_codes
 
 st.set_page_config(page_title="NextCountry", page_icon="🌍", layout="wide")
@@ -56,8 +57,8 @@ def main() -> None:
     options = df_target.apply(_country_label, axis=1).tolist()
     code_by_label = dict(zip(options, df_target["code"]))
 
-    tab_rank, tab_map, tab_visit, tab_priority = st.tabs(
-        ["未訪問国ランキング", "世界地図", "訪問状況", "優先度の設定"]
+    tab_rank, tab_map, tab_visit, tab_priority, tab_flights = st.tabs(
+        ["未訪問国ランキング", "世界地図", "訪問状況", "優先度の設定", "航空券検索"]
     )
 
     with tab_rank:
@@ -122,6 +123,9 @@ def main() -> None:
             set_priority(conn, code, priority)
             st.success(f"{label} の優先度を {priority} に保存しました。")
             st.rerun()
+
+    with tab_flights:
+        render_flights_tab()
 
 
 if __name__ == "__main__":

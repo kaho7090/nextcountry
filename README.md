@@ -53,6 +53,17 @@ streamlit run src/nextcountry/app.py
 pytest
 ```
 
+## Travelport 航空券検索（トライアル）
+
+Streamlit の「航空券検索」タブから片道検索できます。認証情報は環境変数または `.streamlit/secrets.toml` に設定します（`.env.example` を参照）。
+
+- OAuth（プレプロダクション既定）: `https://auth.pp.travelport.net/oauth/token`
+- Search API: `https://api.pp.travelport.net/11/air/catalog/search/catalogproductofferings`
+- GDS 指定: `contentSourceList: ["GDS"]`
+- Fare Calculation 要求: `CustomResponseModifiersAir.includeFareCalculationInd: true`
+
+本番エンドポイントには自動切り替えしません。予約・発券はスコープ外です。
+
 ## データ
 
 | ファイル | 内容 |

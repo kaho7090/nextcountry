@@ -1,0 +1,72 @@
+{
+  "CatalogProductOfferingsResponse": {
+    "@type": "CatalogProductOfferingsResponse",
+    "CatalogProductOfferings": {
+      "CatalogProductOffering": [
+        {
+          "@type": "CatalogProductOffering",
+          "id": "o1",
+          "Departure": "NRT",
+          "Arrival": "ICN",
+          "ProductBrandOptions": [
+            {
+              "flightRefs": ["s1"],
+              "ProductBrandOffering": [
+                {
+                  "Product": [{ "productRef": "p0" }],
+                  "BestCombinablePrice": {
+                    "CurrencyCode": { "decimalPlace": 0, "value": "JPY" },
+                    "Base": 45000,
+                    "TotalTaxes": 5200,
+                    "TotalPrice": 50200,
+                    "PriceBreakdown": [
+                      {
+                        "@type": "PriceBreakdownAir",
+                        "Amount": {
+                          "Taxes": {
+                            "Tax": [
+                              { "taxCode": "YQ", "value": 3000 },
+                              { "taxCode": "SW", "value": 2200 }
+                            ]
+                          }
+                        },
+                        "FareCalculation": "TYO NH SEL45000JPY45000END"
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "ReferenceList": [
+      {
+        "@type": "ReferenceListFlight",
+        "Flight": [
+          {
+            "id": "s1",
+            "carrier": "NH",
+            "number": "962",
+            "Departure": { "time": "10:00:00+09:00" },
+            "Arrival": { "time": "12:30:00+09:00" }
+          }
+        ]
+      },
+      {
+        "@type": "ReferenceListProduct",
+        "Product": [
+          {
+            "id": "p0",
+            "PassengerFlight": [
+              {
+                "FlightProduct": [{ "fareBasisCode": "YOWJP" }]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}
