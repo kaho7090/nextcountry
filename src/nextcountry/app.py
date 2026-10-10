@@ -15,6 +15,7 @@ from nextcountry.dataset import ensure_database
 from nextcountry.geomap import build_world_map_figure
 from nextcountry.ranking import rank_unvisited
 from nextcountry.repository import list_countries_with_preferences, set_priority, set_visited
+from nextcountry.flights.env_loader import load_project_dotenv
 from nextcountry.flights.ui import render_flights_tab
 from nextcountry.targets import load_target_country_codes
 
@@ -40,6 +41,7 @@ def _country_label(row: pd.Series) -> str:
 
 
 def main() -> None:
+    load_project_dotenv()
     st.title("NextCountry")
     st.caption("未訪問国を優先度付きでランキングし、旅の計画を支援します。")
 

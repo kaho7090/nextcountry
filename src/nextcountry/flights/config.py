@@ -41,6 +41,9 @@ class TravelportSettings:
 
 
 def load_travelport_settings() -> TravelportSettings:
+    from nextcountry.flights.env_loader import load_project_dotenv
+
+    load_project_dotenv()
     missing = [name for name in REQUIRED_ENV_VARS if not os.getenv(name)]
     if missing:
         raise FlightSearchConfigError(

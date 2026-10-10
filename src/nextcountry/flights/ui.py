@@ -8,6 +8,7 @@ from datetime import date, timedelta
 import streamlit as st
 
 from nextcountry.flights.config import REQUIRED_ENV_VARS
+from nextcountry.flights.env_loader import load_project_dotenv
 
 from nextcountry.flights.exceptions import (
     FlightSearchApiError,
@@ -36,6 +37,7 @@ def _hydrate_travelport_env_from_streamlit_secrets() -> None:
 
 
 def render_flights_tab() -> None:
+    load_project_dotenv()
     _hydrate_travelport_env_from_streamlit_secrets()
     st.subheader("航空券検索（片道・Travelport トライアル）")
     st.caption(

@@ -55,7 +55,17 @@ pytest
 
 ## Travelport 航空券検索（トライアル）
 
-Streamlit の「航空券検索」タブから片道検索できます。認証情報は環境変数または `.streamlit/secrets.toml` に設定します（`.env.example` を参照）。
+Streamlit の「航空券検索」タブから片道検索できます。認証情報は次のいずれかで設定します（`.env.example` を参照）。
+
+1. リポジトリルートの `.env`（起動時に自動読み込み。既存のシェル環境変数は上書きしません）
+2. シェルの `export`
+3. `.streamlit/secrets.toml`（未設定のキーのみ補完）
+
+接続準備の確認（実 API は呼びません）:
+
+```bash
+python -c "import json; from nextcountry.flights.env_loader import travelport_readiness_report as r; print(json.dumps(r(), indent=2, ensure_ascii=False))"
+```
 
 - OAuth（プレプロダクション既定）: `https://auth.pp.travelport.net/oauth/token`
 - Search API: `https://api.pp.travelport.net/11/air/catalog/search/catalogproductofferings`
