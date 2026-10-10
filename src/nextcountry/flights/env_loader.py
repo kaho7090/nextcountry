@@ -52,6 +52,26 @@ def _var_status(name: str) -> str:
     return "set" if os.getenv(name) else "missing"
 
 
+def apply_travelport_env_from_mapping(mapping: Any) -> int:
+    """
+    キー→値のマッピングから Travelport 用環境変数を補完する。
+    既に os.environ にあるキーは上書きしない。適用した件数を返す。
+    """
+    keys = list(REQUIRED_ENV_VARS) + list(OPTIONAL_ENV_VARS)
+    applied = 0
+    for key in keys:
+        if key not in mapping:
+            continue
+        if os.environ.get(key):
+            continue
+        value = mapping.get(key) if hasattr(mapping, "get") else mapping[key]
+        if value is None or value == "":
+            continue
+        os.environ[key] = str(value)
+        applied += 1
+    return applied
+
+
 def travelport_readiness_report() -> dict[str, Any]:
     """
     Travelport 接続準備の状態を返す（秘密値は含めない）。

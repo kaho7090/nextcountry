@@ -2,13 +2,16 @@
 
 from __future__ import annotations
 
-import os
 from datetime import date, timedelta
 
 import streamlit as st
+from streamlit.errors import StreamlitSecretNotFoundError
 
-from nextcountry.flights.config import REQUIRED_ENV_VARS
-from nextcountry.flights.env_loader import load_project_dotenv
+from nextcountry.flights.env_loader import (
+    load_project_dotenv,
+    travelport_readiness_report,
+    apply_travelport_env_from_mapping,
+)
 
 from nextcountry.flights.exceptions import (
     FlightSearchApiError,
@@ -22,18 +25,45 @@ from nextcountry.flights.provider import get_flight_search_provider
 
 
 def _hydrate_travelport_env_from_streamlit_secrets() -> None:
+    """secrets.toml が無い場合も例外でアプリを止めない。"""
     try:
         secrets = st.secrets  # type: ignore[attr-defined]
+    except StreamlitSecretNotFoundError:
+        return
     except Exception:
         return
-    for key in REQUIRED_ENV_VARS + (
-        "TRAVELPORT_ACCESS_GROUP",
-        "TRAVELPORT_GDS_SUFFIX",
-        "TRAVELPORT_AUTH_URL",
-        "TRAVELPORT_API_BASE_URL",
-    ):
-        if key in secrets and not os.environ.get(key):
-            os.environ[key] = str(secrets[key])
+    try:
+        apply_travelport_env_from_mapping(secrets)
+    except StreamlitSecretNotFoundError:
+        return
+    except Exception:
+        return
+
+
+def _render_travelport_config_status() -> bool:
+    """設定状態を表示。ready のとき True（秘密値は表示しない）。"""
+    report = travelport_readiness_report()
+    if report["ready_for_api"]:
+        st.success(
+            "Travelport API の接続設定は揃っています。"
+            " 検索ボタンでトライアル API に接続します。"
+        )
+        return True
+    st.warning(
+        "Travelport API の認証情報が未設定です。"
+        " リポジトリルートの `.env` または `.streamlit/secrets.toml` を設定してください。"
+    )
+    for issue in report.get("issues", []):
+        st.caption(issue)
+    missing = [
+        name
+        for name, status in report.get("required_variables", {}).items()
+        if status == "missing"
+    ]
+    if missing:
+        st.caption("未設定の必須項目: " + ", ".join(missing))
+    st.caption("テンプレートは `.env.example` を参照してください。")
+    return False
 
 
 def render_flights_tab() -> None:
@@ -44,6 +74,7 @@ def render_flights_tab() -> None:
         "GDS コンテンツを対象に検索します。"
         " Fare Calculation の取得は `includeFareCalculationInd=true` で要求します。"
     )
+    _render_travelport_config_status()
 
     with st.form("flight_search_form"):
         col1, col2, col3 = st.columns(3)
