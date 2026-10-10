@@ -4,7 +4,23 @@ NextCountry helps travellers discover unvisited countries and plan efficient tri
 
 ## 概要
 
-NextCountry は、未訪問の国を優先度（0〜5）でランキングし、訪問済み国を記録する Streamlit アプリです。国マスタは同梱 CSV、個人の訪問状況・優先度は SQLite に保存します（外部 API は使いません）。
+NextCountry は、**197カ国**を訪問目標として、未訪問国を優先度（0〜5）でランキングし、訪問済み国を記録する Streamlit アプリです。国マスタは同梱 CSV、個人の訪問状況・優先度は SQLite に保存します（実行時の外部 API は使いません）。
+
+## 対象国（197カ国）の定義
+
+デフォルトの訪問目標は次の集合です。
+
+- 国連加盟国 193カ国
+- 国連オブザーバー: バチカン市国（`VA`）、パレスチナ（`PS`）
+- 追加: 台湾（`TW`）、コソボ（`XK`）
+
+正準リストは `data/target_countries.csv`（`code` 列）および `src/nextcountry/targets.py` の `DEFAULT_TARGET_COUNTRY_CODES` で定義します。ランキング・訪問管理 UI・地図の「対象」はこの197カ国に限定されます。
+
+`data/countries.csv` は国・地域マスタ（約250件）として維持し、197件には削減しません。対象外の国・地域に保存済みの訪問状況・優先度は削除しません。
+
+### コソボ（`XK`）について
+
+`XK` は ISO 3166-1 の正式な alpha-2 割当ではありませんが、本アプリではコソボを識別する内部コードとして使用します。Natural Earth の GeoJSON では `ISO_A2_EH` が `XK` の地物にマッピングします。
 
 ## 技術スタック
 
@@ -12,6 +28,7 @@ NextCountry は、未訪問の国を優先度（0〜5）でランキングし、
 - Streamlit
 - SQLite
 - pandas
+- Plotly（コロプレス地図）
 - pytest
 
 ## セットアップ
@@ -40,13 +57,24 @@ pytest
 
 | ファイル | 内容 |
 |----------|------|
-| `data/countries.csv` | 国コード・英語名・日本語名（マスタ） |
+| `data/countries.csv` | 国・地域マスタ（英語名・日本語名） |
+| `data/target_countries.csv` | 訪問目標197カ国のコード一覧 |
+| `data/geo/ne_50m_admin_0_countries.geojson` | 世界地図用国境データ（Natural Earth） |
 | `data/nextcountry.db` | 訪問状況・優先度（初回起動時に自動作成、git 管理外） |
+
+### 地図データの出典
+
+国境 GeoJSON は [Natural Earth](https://www.naturalearthdata.com/) の **Admin 0 – Countries**（50m 解像度）を加工せず同梱しています。
+
+- 出典: Natural Earth / nvkelso/natural-earth-vector
+- ライセンス: [Public Domain](https://www.naturalearthdata.com/about/terms-of-use/)
+
+地図タイルや外部 URL からの実行時取得は行いません。
 
 ## プロジェクト構成
 
 ```text
-src/nextcountry/   アプリ本体（DB・ランキング・Streamlit）
-data/              国マスタ CSV と SQLite DB
+src/nextcountry/   アプリ本体（DB・ランキング・地図・Streamlit）
+data/              国マスタ・対象国リスト・GeoJSON・SQLite
 tests/             pytest
 ```
